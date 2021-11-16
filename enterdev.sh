@@ -61,6 +61,11 @@ if [ ! $(docker ps -q -f name="^${NAME}$") ]; then
     SUDO_FLAGS="-v /usr/bin/sudo:/usr/bin/sudo:ro -v /usr/lib/sudo:/usr/lib/sudo:ro"
   fi
 
+  SSS_FLAGS=""
+  if [ -f "/var/lib/sss" ]; then
+    SSS_FLAGS="-v /var/lib/sss:/var/lib/sss:ro"
+  fi
+
   NET_FLAGS="--network host --add-host ${NAME}:127.0.0.1"
   IPC_FLAGS="--ipc host --pid host"
   X11_FLAGS=""
@@ -84,6 +89,7 @@ if [ ! $(docker ps -q -f name="^${NAME}$") ]; then
     $USER_FLAGS \
     $ETC_MOUNT_FLAGS \
     $SUDO_FLAGS \
+    $SSS_FLAGS \
     $NET_FLAGS \
     $IPC_FLAGS \
     $X11_FLAGS \

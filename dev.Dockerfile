@@ -7,6 +7,7 @@ RUN apt update && \
         git \
         python3-dev \
         python3-pip \
+        sssd \
         sudo \
         valgrind \
         vim \
