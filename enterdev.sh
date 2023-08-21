@@ -52,7 +52,7 @@ if [ ! $(docker ps -q -f name="^${NAME}$") ]; then
   for grp in $(id -G); do USER_FLAGS="${USER_FLAGS} --group-add $grp"; done
 
   ETC_MOUNT_FLAGS=""
-  for f in "group" "gshadow" "inputrc" "localtime" "passwd" "shadow" "subgid" "subuid" "sudoers"; do
+  for f in "group" "gshadow" "inputrc" "localtime" "passwd" "shadow" "subgid" "subuid"; do
     ETC_MOUNT_FLAGS="${ETC_MOUNT_FLAGS} -v /etc/$f:/etc/$f:ro"
   done
 
