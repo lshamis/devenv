@@ -14,4 +14,11 @@ RUN apt update && \
         wget && \
     rm -rf /var/lib/apt/lists/*
 
+RUN python3 -m pip install \
+    black
+
 RUN curl https://get.docker.com | sh
+RUN python3 -m pip install \
+    prompt_toolkit \
+    pygments \
+    "xonsh[full]"

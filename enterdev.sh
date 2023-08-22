@@ -1,13 +1,16 @@
 #!/bin/bash
 set -o errexit -o noclobber -o nounset
 
-opts="$(getopt -o n:i:d -l name:,image:,detach,hostbin --name "$0" -- "$@")"
+opts="$(getopt -o n:i:d -l name:,image:,shell:,detach,hostbin,rebuild,restart -- "$@")"
 eval set -- "$opts"
 
 NAME="dev"
-IMAGE=""
+IMAGE="enterdev/dev:latest"
+SHELL="xonsh"
 DETACH=false
 HOSTBIN=false
+REBUILD=false
+RESTART=false
 while true
 do
   case "$1" in
@@ -19,12 +22,24 @@ do
       IMAGE=$2
       shift 2
       ;;
+    --shell)
+      SHELL=$2
+      shift 2
+      ;;
     -d|--detach)
       DETACH=true
       shift
       ;;
     --hostbin)
       HOSTBIN=true
+      shift
+      ;;
+    --rebuild)
+      REBUILD=true
+      shift
+      ;;
+    --restart)
+      RESTART=true
       shift
       ;;
     --)
@@ -38,21 +53,22 @@ do
   esac
 done
 
+if [ "$RESTART" = true ]; then
+  docker rm -f $NAME
+fi
+
 if [ ! $(docker ps -q -f name="^${NAME}$") ]; then
-  if [ -z "$IMAGE" ]; then
-    IMAGE="enterdev/dev:latest"
-    if [ ! $(docker images -q "$IMAGE") ]; then
-      pushd "$(dirname "$0")"
-      docker build -t "$IMAGE" -f dev.Dockerfile .
-      popd
-    fi
+  if [ "$REBUILD" = true ] || [ ! $(docker images -q "$IMAGE") ]; then
+    pushd "$(dirname "$0")"
+    docker build -t "$IMAGE" -f dev.Dockerfile .
+    popd
   fi
 
-  USER_FLAGS="-u $(id -u):$(id -g) -v ${HOME}:${HOME}"
+  USER_FLAGS="-u $(id -u):$(id -g) -e USER=${USER} -v ${HOME}:${HOME}"
   for grp in $(id -G); do USER_FLAGS="${USER_FLAGS} --group-add $grp"; done
 
   ETC_MOUNT_FLAGS=""
-  for f in "group" "gshadow" "inputrc" "localtime" "passwd" "shadow" "subgid" "subuid" "sudoers"; do
+  for f in "group" "gshadow" "inputrc" "localtime" "passwd" "shadow" "ssh" "subgid" "subuid" "sudoers"; do
     ETC_MOUNT_FLAGS="${ETC_MOUNT_FLAGS} -v /etc/$f:/etc/$f:ro"
   done
 
@@ -96,9 +112,10 @@ if [ ! $(docker ps -q -f name="^${NAME}$") ]; then
     $NVIDIA_FLAGS \
     $DOCKER_FLAGS \
     $@ \
-    $IMAGE bash
+    $IMAGE \
+    $SHELL
 fi
 
 if [ "$DETACH" = false ]; then
-  docker exec -it -w "${PWD}" $NAME bash
+  docker exec -it -w "${PWD}" $NAME $SHELL
 fi
